@@ -202,7 +202,7 @@ class Downloader:
         return resp.read()
 
 def main(mountpoint):
-    FUSE(PutioMount(), mountpoint, nothreads=False, foreground=False)
+    FUSE(PutioMount(), mountpoint, nothreads=False, foreground=False,**{'allow_other': True})
 
 if __name__ == '__main__':
     main(sys.argv[1])
