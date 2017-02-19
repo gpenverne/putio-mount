@@ -114,7 +114,7 @@ class PutioMount(Operations):
                 st_nlink=1
             )
         return dict(
-            st_mode=040777,
+            st_mode=S_IFREG | 0444,
             st_size=file.size,
             st_ctime=ctime,
             st_mtime=ctime,
