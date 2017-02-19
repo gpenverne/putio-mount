@@ -99,8 +99,11 @@ class PutioMount(Operations):
             st = os.lstat('/tmp/a-fake-file-which-not-exists')
             return dict((key, getattr(st, key)) for key in ('st_atime', 'st_ctime',
                      'st_gid', 'st_mode', 'st_mtime', 'st_nlink', 'st_size', 'st_uid'))
+        try:
+            ctime = time.mktime(file.created_at.timetuple())
+        except:
+            ctime = self.now
 
-        ctime = time.mktime(file.created_at.timetuple())
         if file.content_type == 'application/x-directory':
            return dict(
                 st_mode=S_IFREG,
