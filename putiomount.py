@@ -263,7 +263,7 @@ class Downloader:
         return data
 
 def main(mountpoint):
-    FUSE(PutioMount(), mountpoint, nothreads=False, foreground=True,**{'allow_other': True})
+    FUSE(PutioMount(), mountpoint, nothreads=False, foreground=False,**{'allow_other': True})
 
 if __name__ == '__main__':
     main(sys.argv[1])
