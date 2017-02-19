@@ -89,7 +89,7 @@ class PutioMount(Operations):
                  st_size=4096,
                  st_ctime=self.now,
                  st_mtime=self.now,
-                 st_atime=self.now,
+                 st_atime=0,
                  st_nlink=1
              )
 
@@ -110,7 +110,7 @@ class PutioMount(Operations):
                 st_size=4096,
                 st_ctime=ctime,
                 st_mtime=ctime,
-                st_atime=ctime,
+                st_atime=0,
                 st_nlink=1
             )
         return dict(
@@ -118,7 +118,7 @@ class PutioMount(Operations):
             st_size=file.size,
             st_ctime=ctime,
             st_mtime=ctime,
-            st_atime=ctime,
+            st_atime=0,
             st_nlink=1
         )
 
