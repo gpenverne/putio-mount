@@ -1,3 +1,4 @@
 putio.py
 fusepy
 requests
+inotify
