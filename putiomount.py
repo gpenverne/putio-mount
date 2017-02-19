@@ -18,6 +18,11 @@ import threading
 foldersIds = {}
 downloaders = {}
 
+tmpPath = '/tmp/putio'
+
+if not os.path.exists(tmpPath):
+    os.makedirs(tmpPath)
+
 class PutioMount(Operations):
     def __init__(self):
         with open('.credentials.json') as json_data:
@@ -235,8 +240,9 @@ class Downloader:
         if packet.end > self.size:
             packet.end = self.size
 
-        packet.file = '/tmp/putio-' + str(self.fileId) + '-' + str(packet.start)
+        packet.file = '/tmp/putio/' + str(self.fileId) + '-' + str(packet.start)
         if not os.path.exists(packet.file):
+            cleanOldFiles()
             thr = threading.Thread(target=self._create_packet, args=(), kwargs={"packet": packet, "url": url})
             thr.start()
 
@@ -261,6 +267,14 @@ class Downloader:
             nextPacket = self._get_packet(packet.end + 1, 2, url)
 
         return data
+
+def cleanOldFiles() :
+    path = "/tmp/putio"
+    now = time.time()
+    for f in os.listdir(path):
+        f = os.path.join(path, f)
+        if os.stat(f).st_mtime < now - 2 * 60 * 60 and os.path.isfile(f):
+            os.remove(f)
 
 def main(mountpoint):
     FUSE(PutioMount(), mountpoint, nothreads=False, foreground=False,**{'allow_other': True})
