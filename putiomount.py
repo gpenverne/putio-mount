@@ -25,7 +25,8 @@ if not os.path.exists(tmpPath):
 
 class PutioMount(Operations):
     def __init__(self):
-        with open('.credentials.json') as json_data:
+        credentials_file = os.path.dirname(os.path.realpath(__file__)) + '/.credentials.json'
+        with open(credentials_file) as json_data:
             self.putioToken = json.load(json_data)['token']
 
         if self.putioToken is None:
