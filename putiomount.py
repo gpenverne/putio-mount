@@ -9,9 +9,11 @@ import putiopy
 import json
 import pwd
 import time
+import requests
 import urllib2
 from stat import S_IFDIR, S_IFLNK, S_IFREG
 from fuse import FUSE, FuseOSError, Operations
+import threading
 
 foldersIds = {}
 downloaders = {}
@@ -174,35 +176,94 @@ class PutioMount(Operations):
 
     def read(self, path, length, offset, fh):
         try:
+            fileUrl = links[path]
+        except:
+            file = self._get_file(path)
+            fileUrl = file.get_stream_link()
+            if fileUrl.replace('oauth_token', '') == fileUrl:
+                fileUrl = fileUrl +'?oauth_token='+self.putioToken
+        try:
             downloader = downloaders[path]
         except:
-            try:
-                fileUrl = links[path]
-            except:
-                file = self._get_file(path)
-                fileUrl = file.get_stream_link()
-                if fileUrl.replace('oauth_token', '') == fileUrl:
-                    fileUrl = fileUrl +'?oauth_token='+self.putioToken
-
             downloader = Downloader(fileUrl, file.size, file.id)
             downloaders[path] = downloader
 
-        return downloader.read(offset, length)
+        return downloader.read(offset, length, fileUrl)
 
 class Downloader:
+    packetSize = 1024 * 2048
+
     def __init__(self, fileUrl, fileSize, fileId):
+        self.packets = []
+
         self.url = fileUrl
         self.size = fileSize
         self.fileId = fileId
 
-    def read(self, offset, length):
-        req = urllib2.Request(self.url)
-        req.add_header('Range', 'bytes=' + str(offset) + '-' + str(offset + length - 1))
-        resp = urllib2.urlopen(req)
-        return resp.read()
+    def _create_packet(self, packet, url):
+        if os.path.exists(packet.file):
+            return packet
+
+        headers = {"Range": 'bytes=' + str(packet.start) + '-' + str(packet.end - 1)}
+        req = requests.get(url, headers=headers, stream=True)
+
+        with open(packet.file, 'w') as fp:
+            for chunk in req.iter_content(chunk_size=512):
+                if chunk:
+                    fp.write(chunk)
+                    fp.flush()
+
+                if os.path.getsize(packet.file) >= self.packetSize or fp.tell()  >= self.packetSize:
+                    return packet
+
+        return packet
+    def _get_packet(self, offset, length, url):
+        for packet in self.packets:
+            if packet.start <= offset and packet.end >= offset + length:
+                return packet
+
+        packet = type('lamdbaobject', (object,), {})()
+        packet.start = 0
+        packet.end = self.packetSize
+        packet.id = 1
+
+        while packet.end < offset + length:
+            packet.start += self.packetSize
+            packet.end = packet.start + self.packetSize
+            packet.id += 1
+
+        if packet.end > self.size:
+            packet.end = self.size
+
+        packet.file = '/tmp/putio-' + str(self.fileId) + '-' + str(packet.start)
+        if not os.path.exists(packet.file):
+            thr = threading.Thread(target=self._create_packet, args=(), kwargs={"packet": packet, "url": url})
+            thr.start()
+
+        return packet
+
+    def read(self, offset, length, url):
+        if offset + length > self.size:
+            length = self.size - offset
+
+        packet = self._get_packet(offset, length, url)
+
+        if not os.path.exists(packet.file) or os.path.getsize(packet.file) < offset - packet.start + length or packet.end < offset + length or offset - packet.start < 0:
+            headers = {"Range": 'bytes=' + str(offset) + '-' + str(offset + length - 1)}
+            return requests.get(url, headers=headers).content
+
+        fp = open(packet.file, 'r')
+        fp.seek(offset - packet.start)
+        data = fp.read(length)
+        fp.close()
+
+        if packet.end < self.size and os.path.getsize(packet.file) >= self.packetSize:
+            nextPacket = self._get_packet(packet.end + 1, 2, url)
+
+        return data
 
 def main(mountpoint):
-    FUSE(PutioMount(), mountpoint, nothreads=False, foreground=False,**{'allow_other': True})
+    FUSE(PutioMount(), mountpoint, nothreads=False, foreground=True,**{'allow_other': True})
 
 if __name__ == '__main__':
     main(sys.argv[1])
