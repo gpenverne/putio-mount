@@ -89,10 +89,11 @@ class PutioMount(Operations):
                  st_size=4096,
                  st_ctime=self.now,
                  st_mtime=self.now,
+                 st_uid= os.getuid(),
+                 st_gid=os.getuid(),
                  st_atime=0,
                  st_nlink=1
              )
-
         try:
             file = self._get_file(path)
         except:
@@ -111,6 +112,8 @@ class PutioMount(Operations):
                 st_ctime=ctime,
                 st_mtime=ctime,
                 st_atime=0,
+                st_uid=os.getuid(),
+                st_gid=os.getuid(),
                 st_nlink=1
             )
         return dict(
@@ -118,6 +121,8 @@ class PutioMount(Operations):
             st_size=file.size,
             st_ctime=ctime,
             st_mtime=ctime,
+            st_uid= os.getuid(),
+            st_gid=os.getuid(),
             st_atime=0,
             st_nlink=1
         )
