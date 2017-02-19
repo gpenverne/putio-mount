@@ -36,7 +36,6 @@ class PutioMount(Operations):
 
         self.putio = putiopy.Client(self.putioToken)
 
-
     def _set_files(self, folder, files):
         for file in files:
             folderName = (folder + '/' + file.name).replace('//', '/').encode('utf-8')
@@ -86,7 +85,7 @@ class PutioMount(Operations):
 
         if path == '/':
             return dict(
-                 st_mode=040777,
+                 st_mode=S_IFREG,
                  st_size=4096,
                  st_ctime=self.now,
                  st_mtime=self.now,
@@ -101,21 +100,22 @@ class PutioMount(Operations):
             return dict((key, getattr(st, key)) for key in ('st_atime', 'st_ctime',
                      'st_gid', 'st_mode', 'st_mtime', 'st_nlink', 'st_size', 'st_uid'))
 
+        ctime = time.mktime(file.created_at.timetuple())
         if file.content_type == 'application/x-directory':
            return dict(
-                st_mode=040777,
+                st_mode=S_IFREG,
                 st_size=4096,
-                st_ctime=self.now,
-                st_mtime=self.now,
-                st_atime=self.now,
+                st_ctime=ctime,
+                st_mtime=ctime,
+                st_atime=ctime,
                 st_nlink=1
             )
         return dict(
-            st_mode=S_IFREG | 0444,
+            st_mode=S_IFREG,
             st_size=file.size,
-            st_ctime=0,
-            st_mtime=0,
-            st_atime=0,
+            st_ctime=ctime,
+            st_mtime=ctime,
+            st_atime=ctime,
             st_nlink=1
         )
 
@@ -280,9 +280,9 @@ def cleanOldFiles() :
             os.remove(f)
 
 def main(mountpoint):
-    FUSE(PutioMount(), mountpoint, nothreads=False, foreground=False,**{'allow_other': True})
+    FUSE(PutioMount(), mountpoint, nothreads=False, foreground=True,**{'allow_other': True})
     i = inotify.adapters.Inotify()
-    i.addWatch(mountpoint)
+    i.add_watch(mountpoint)
 
 if __name__ == '__main__':
     main(sys.argv[1])
