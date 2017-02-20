@@ -85,7 +85,7 @@ class PutioMount(Operations):
 
         if path == '/':
             return dict(
-                 st_mode=S_IFDIR,
+                 st_mode=S_IFDIR | 0755,
                  st_size=4096,
                  st_ctime=self.now,
                  st_mtime=self.now,
@@ -107,7 +107,7 @@ class PutioMount(Operations):
 
         if file.content_type == 'application/x-directory':
            return dict(
-                st_mode=S_IFDIR,
+                st_mode=040777,
                 st_size=4096,
                 st_ctime=ctime,
                 st_mtime=ctime,
@@ -117,7 +117,7 @@ class PutioMount(Operations):
                 st_nlink=1
             )
         return dict(
-            st_mode=S_IFREG,
+            st_mode=S_IFREG | 0777,
             st_size=file.size,
             st_ctime=ctime,
             st_mtime=ctime,
