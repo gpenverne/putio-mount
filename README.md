@@ -11,7 +11,24 @@ Mount put.io as a drive on linux
 }
 ```
 
+## Installation
+```bash
+$ pip install -r requirements.txt
+```
+
 ## Usage
 ```bash
 $ python ./putiomount.py /destination/folder
+```
+
+## Issues
+Upgrade requests and urllib3:
+```bash
+$ pip install -U urllib3
+$ pip install -U requests
+```
+
+Check if fuse is installed:
+```bash
+$ apt-get install fuse
 ```
