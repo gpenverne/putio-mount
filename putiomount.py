@@ -281,7 +281,7 @@ class Downloader:
 def cleanOldFiles() :
     now = time.time()
     for f in os.listdir(tmpPath):
-        f = os.path.join(path, f)
+        f = os.path.join(tmpPath, f)
         if os.stat(f).st_atime < now - 60 * 60 and os.path.isfile(f):
             os.remove(f)
 
