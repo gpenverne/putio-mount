@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 from __future__ import with_statement
 
 import os
@@ -15,18 +13,19 @@ from stat import S_IFDIR, S_IFLNK, S_IFREG
 from fuse import FUSE, FuseOSError, Operations
 import threading
 import inotify.adapters
+import tempfile
 
 foldersIds = {}
 downloaders = {}
 
-tmpPath = '/tmp/putio'
+tmpPath = os.path.join(tempfile.gettempdir(), 'putio')
 
 if not os.path.exists(tmpPath):
     os.makedirs(tmpPath)
 
 class PutioMount(Operations):
     def __init__(self):
-        credentials_file = os.path.dirname(os.path.realpath(__file__)) + '/.credentials.json'
+        credentials_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), '.credentials.json')
         with open(credentials_file) as json_data:
             self.putioToken = json.load(json_data)['token']
 
@@ -38,11 +37,11 @@ class PutioMount(Operations):
 
     def _set_files(self, folder, files):
         for file in files:
-            folderName = (folder + '/' + file.name).replace('//', '/').encode('utf-8')
+            folderName = os.path.join(folder, file.name).replace(os.path.sep + os.path.sep, os.path.sep).encode('utf-8')
             foldersIds[folderName] = file
 
     def _get_id(self, path):
-        if path == '/':
+        if path == os.path.sep:
             return 0
 
         return self._get_file(path).id
@@ -83,7 +82,7 @@ class PutioMount(Operations):
         self.now = int(time.time())
         parentPath = self._get_parent_path(path)
 
-        if path == '/':
+        if path == os.path.sep:
             return dict(
                  st_mode=S_IFDIR | 0755,
                  st_size=4096,
@@ -97,7 +96,7 @@ class PutioMount(Operations):
         try:
             file = self._get_file(path)
         except:
-            st = os.lstat('/tmp/a-fake-file-which-not-exists')
+            st = os.lstat('a-fake-file-which-not-exists')
             return dict((key, getattr(st, key)) for key in ('st_atime', 'st_ctime',
                      'st_gid', 'st_mode', 'st_mtime', 'st_nlink', 'st_size', 'st_uid'))
         try:
@@ -130,7 +129,7 @@ class PutioMount(Operations):
     def readdir(self, path, fh):
         full_path = self._full_path(path)
         dirents = ['.', '..']
-        if full_path != '/':
+        if full_path != os.path.sep:
             file = self._get_file(full_path)
             files = file.dir()
         else:
@@ -146,7 +145,7 @@ class PutioMount(Operations):
     def mkdir(self, path, mode):
         pathInfos = os.path.split(path)
         parentPath = pathInfos[0]
-        if (parentPath != '/'):
+        if (parentPath != os.path.sep):
             parentId = self._get_file(parentPath).id
         else:
             parentId = 0
@@ -251,7 +250,7 @@ class Downloader:
         if packet.end > self.size:
             packet.end = self.size
 
-        packet.file = '/tmp/putio/' + str(self.fileId) + '-' + str(packet.start)
+        packet.file = os.path.join(tmpPath, str(self.fileId) + '-' + str(packet.start))
         if not os.path.exists(packet.file):
             cleanOldFiles()
             thr = threading.Thread(target=self._create_packet, args=(), kwargs={"packet": packet, "url": url})
@@ -280,11 +279,10 @@ class Downloader:
         return data
 
 def cleanOldFiles() :
-    path = "/tmp/putio"
     now = time.time()
-    for f in os.listdir(path):
+    for f in os.listdir(tmpPath):
         f = os.path.join(path, f)
-        if os.stat(f).st_mtime < now - 2 * 60 * 60 and os.path.isfile(f):
+        if os.stat(f).st_atime < now - 60 * 60 and os.path.isfile(f):
             os.remove(f)
 
 def main(mountpoint):
