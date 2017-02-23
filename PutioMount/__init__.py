@@ -1,14 +1,11 @@
 from __future__ import with_statement
 
 import os
-from sys import exit
-import errno
+from sys import exit, argv
 import putiopy
-import json
 import pwd
 import time
 import requests
-import urllib2
 from stat import S_IFDIR, S_IFLNK, S_IFREG
 from fuse import FUSE, FuseOSError, Operations
 import threading
@@ -19,14 +16,12 @@ foldersIds = {}
 downloaders = {}
 
 tmp_path = os.path.join(tempfile.gettempdir(), 'putio')
-credentials_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../.credentials.json')
+credentials_path = os.path.join(os.path.expanduser('~'), '.putio-token')
 putio_token = None
 
 class PutioMounter(Operations):
     def __init__(self):
-        with open(credentials_path) as json_data:
-            putio_token = json.load(json_data)['token']
-
+        global putio_token
         self.putio = putiopy.Client(putio_token)
 
     def _set_files(self, folder, files):
@@ -59,16 +54,15 @@ class PutioMounter(Operations):
 
     def access(self, path, mode):
         full_path = self._full_path(path)
-        if not os.access(full_path, mode):
-            raise FuseOSError(errno.EACCES)
+
 
     def chmod(self, path, mode):
         full_path = self._full_path(path)
-        return os.chmod(full_path, mode)
+
 
     def chown(self, path, uid, gid):
         full_path = self._full_path(path)
-        return os.chown(full_path, uid, gid)
+
 
     def getattr(self, path, fh=None):
         uid = pwd.getpwuid(os.getuid()).pw_uid
@@ -281,37 +275,42 @@ def clean_old_files() :
             os.remove(f)
 
 def main(mount_point):
-    mount_point = mount_point
+    mount(mount_point)
 
+def mount(new_mount_point):
+    global mount_point
+    global putio_token
+
+    mount_point = new_mount_point
     if not os.path.exists(tmp_path):
         os.makedirs(tmp_path)
 
     if not os.path.exists(credentials_path):
         with open(credentials_path, 'w') as f:
-            f.write(json.dumps('{"token": "YOUR_TOKEN_HERE"}'))
+            f.write("YOUR_TOKEN_HERE")
 
-    with open(credentials_path) as json_data:
-        putio_token = json.load(json_data)['token']
-
+    with open(credentials_path, 'r') as f:
+        putio_token = f.read().replace("\n", "").replace("\r", "")
 
     if putio_token is None or putio_token == 'YOUR_TOKEN_HERE':
         print "Please put your token in %s file." % credentials_path
-        sys.exit()
+        exit()
 
-    mount(mount_point)
-
-def mount(mount_point):
     FUSE(PutioMounter(), mount_point, nothreads=False, foreground=False,**{'allow_other': True})
     i = inotify.adapters.Inotify()
     i.add_watch(mount_point)
 
 def get_mount_point():
+    global mount_point
+
     return mount_point
 
 def set_credentials_path(custom_credentials_path):
+    global credentials_path
     credentials_path = custom_credentials_path
 
 def set_tmp_path(custom_tmp_path):
+    global tmp_path
     tmp_path = custom_tmp_path
 
 if __name__ == '__main__':
