@@ -17,7 +17,12 @@ $ python ./putiomount.py /destination/folder
 ```
 
 ## Advanced usage
-You can use PutioMount as a library:
+If you want to use PutioMount as a library, you can install it using pip:
+```bash
+$ pip install PutioMount
+```
+
+And use it:
 ```python
 import PutioMount
 
