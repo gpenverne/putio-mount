@@ -1,5 +1,5 @@
-# putio-mount
-Mount put.io as a drive on linux
+# PutioMount
+Mount put.io as a drive using python
 
 ## Retrieving a token
 1) Go to https://put.io/oauth/apps/new , create an app (fill something in all fields, it does not matter)  
@@ -13,12 +13,27 @@ Mount put.io as a drive on linux
 
 ## Installation
 ```bash
-$ pip install -r requirements.txt
+$ python setup.py install
 ```
 
 ## Usage
 ```bash
 $ python ./putiomount.py /destination/folder
+```
+
+## Advanced usage
+You can use PutioMount as a library:
+```python
+import PutioMount
+
+# Set a custom temporary path
+PutioMount.set_tmp_path('/tmp')
+
+# Set a custom credentials path
+PutioMount.set_credentials_path('/path/to/.credentials')
+
+# Mount to specific path
+PutioMount.mount('/my/mount/point')
 ```
 
 ## Issues

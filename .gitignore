@@ -1,0 +1,4 @@
+PutioMount.egg-info
+dist
+build
+*.pyc
