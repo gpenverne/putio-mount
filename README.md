@@ -32,6 +32,12 @@ PutioMount.set_tmp_path('/tmp')
 # Set a custom credentials path
 PutioMount.set_credentials_path('/path/to/.credentials')
 
+# List mp4 files if available instead of original files
+# 
+# Need to install specific package
+# pip install git+https://github.com/gpenverne/putio.py
+PutioMount.set_prefer_mp4()
+
 # Mount to specific path
 PutioMount.mount('/my/mount/point')
 ```

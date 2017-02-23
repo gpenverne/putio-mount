@@ -18,16 +18,23 @@ downloaders = {}
 tmp_path = os.path.join(tempfile.gettempdir(), 'putio')
 credentials_path = os.path.join(os.path.expanduser('~'), '.putio-token')
 putio_token = None
+prefer_mp4 = False
 
 class PutioMounter(Operations):
     def __init__(self):
         global putio_token
+        global prefer_mp4
+
         self.putio = putiopy.Client(putio_token)
+        self.prefer_mp4 = prefer_mp4
+        print self.prefer_mp4
 
     def _set_files(self, folder, files):
         for file in files:
-            folderName = os.path.join(folder, file.name).replace(os.path.sep + os.path.sep, os.path.sep).encode('utf-8')
-            foldersIds[folderName] = file
+            self._add_file(os.path.join(folder, file.name), file)
+
+    def _add_file(self, fullFileName, file):
+        foldersIds[fullFileName.replace(os.path.sep + os.path.sep, os.path.sep).encode('utf-8')] = file
 
     def _get_id(self, path):
         if path == os.path.sep:
@@ -103,9 +110,18 @@ class PutioMounter(Operations):
                 st_gid=os.getuid(),
                 st_nlink=1
             )
+
+        size = file.size
+
+        if self.prefer_mp4 and file.content_type[:6] == 'video/' and file.content_type != 'video/mp4':
+            if not file.is_mp4_available:
+                file.ask_for_mp4()
+            else:
+                size = file.get_mp4_size()
+
         return dict(
             st_mode=S_IFREG | 0777,
-            st_size=file.size,
+            st_size=size,
             st_ctime=ctime,
             st_mtime=ctime,
             st_uid= os.getuid(),
@@ -126,7 +142,11 @@ class PutioMounter(Operations):
 
         self._set_files(full_path, files)
         for file in files:
-            dirents.append(file.name.encode('utf-8'))
+            filename = file.name.encode('utf-8')
+            if self.prefer_mp4 and file.content_type[:6] == 'video/' and file.content_type != 'video/mp4' and file.is_mp4_available:
+                filename = os.path.splitext(filename)[0]+'.mp4'
+                self._add_file(os.path.join(full_path, filename), file)
+            dirents.append(filename)
 
         return dirents
 
@@ -182,7 +202,7 @@ class PutioMounter(Operations):
             fileUrl = links[path]
         except:
             file = self._get_file(path)
-            fileUrl = file.get_stream_link()
+            fileUrl = file.get_stream_link(prefer_mp4=self.prefer_mp4)
             if fileUrl.replace('oauth_token', '') == fileUrl:
                 fileUrl = "%s?oauth_token=%s" % (fileUrl, putio_token)
         try:
@@ -304,6 +324,10 @@ def get_mount_point():
     global mount_point
 
     return mount_point
+
+def set_prefer_mp4(preferMp4=True):
+    global prefer_mp4
+    prefer_mp4 = preferMp4
 
 def set_credentials_path(custom_credentials_path):
     global credentials_path
