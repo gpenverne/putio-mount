@@ -27,7 +27,6 @@ class PutioMounter(Operations):
 
         self.putio = putiopy.Client(putio_token)
         self.prefer_mp4 = prefer_mp4
-        print self.prefer_mp4
 
     def _set_files(self, folder, files):
         for file in files:
