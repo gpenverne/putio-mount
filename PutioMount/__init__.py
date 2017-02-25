@@ -80,7 +80,7 @@ class PutioMounter(Operations):
 
         if path == os.path.sep:
             return dict(
-                 st_mode=S_IFDIR | 0755,
+                 st_mode=S_IFDIR,
                  st_size=4096,
                  st_ctime=self.now,
                  st_mtime=self.now,
@@ -103,7 +103,7 @@ class PutioMounter(Operations):
         if isinstance(file, self.putio.Subtitle):
             filepath = file.download('/tmp')
             return dict(
-                 st_mode=S_IFREG | 0777,
+                 st_mode=S_IFREG,
                  st_size=os.path.getsize(filepath),
                  st_ctime=ctime,
                  st_mtime=ctime,
@@ -133,7 +133,7 @@ class PutioMounter(Operations):
                 size = file.get_mp4_size()
 
         return dict(
-            st_mode=S_IFREG | 0777,
+            st_mode=S_IFREG,
             st_size=size,
             st_ctime=ctime,
             st_mtime=ctime,

@@ -59,3 +59,7 @@ Check if fuse is installed:
 ```bash
 $ apt-get install fuse
 ```
+
+```bash
+$ pip install 'requests[security]'
+```
