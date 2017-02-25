@@ -234,14 +234,17 @@ class PutioMounter(Operations):
 
             filename, file_extension = os.path.splitext(path)
             filename, original_file_extension = os.path.splitext(file.name)
+
             if self.config['use_mp4'] and original_file_extension != '.mp4' and file_extension == '.mp4':
                 fileUrl = file.get_stream_link(prefer_mp4=True)
+                size = file.get_mp4_size()
             else:
                 fileUrl = file.get_stream_link(prefer_mp4=False)
+                size = file.size
         try:
             downloader = downloaders[path]
         except:
-            downloader = Downloader(fileUrl, file.size, file.id)
+            downloader = Downloader(fileUrl, size, file.id)
             downloaders[path] = downloader
 
         return downloader.read(offset, length, fileUrl, path)
@@ -294,7 +297,7 @@ class Downloader:
             packet.end = self.size
 
         filename, file_extension = os.path.splitext(path)
-        packet.file = os.path.join(tmp_path, '%s-%s-%s' % (str(self.fileId), str(packet.start), str(file_extension)))
+        packet.file = os.path.join(tmp_path, '%s-%s%s' % (str(self.fileId), str(packet.start), str(file_extension)))
         if not os.path.exists(packet.file):
             clean_old_files()
             thr = threading.Thread(target=self._create_packet, args=(), kwargs={"packet": packet, "url": url})
