@@ -10,5 +10,5 @@ setup(name='PutioMount',
       packages=find_packages(),
       license='MIT',
       url='https://github.com/gpenverne/putio-mount',
-      install_requires=['putio.py', 'fusepy', 'requests', 'inotify']
+      install_requires=['putio.py', 'fusepy', 'requests', 'inotify', 'urllib3']
      )

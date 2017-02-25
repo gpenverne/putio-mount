@@ -12,6 +12,9 @@ from fuse import FUSE, FuseOSError, Operations
 import threading
 import inotify.adapters
 import tempfile
+import urllib3
+
+urllib3.disable_warnings()
 
 foldersIds = {}
 downloaders = {}
