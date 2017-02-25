@@ -80,7 +80,7 @@ class PutioMounter(Operations):
 
         if path == os.path.sep:
             return dict(
-                 st_mode=S_IFDIR,
+                 st_mode=S_IFDIR | 0755,
                  st_size=4096,
                  st_ctime=self.now,
                  st_mtime=self.now,
@@ -103,7 +103,7 @@ class PutioMounter(Operations):
         if isinstance(file, self.putio.Subtitle):
             filepath = file.download('/tmp')
             return dict(
-                 st_mode=S_IFREG,
+                 st_mode=S_IFREG | 0755,
                  st_size=os.path.getsize(filepath),
                  st_ctime=ctime,
                  st_mtime=ctime,
@@ -114,7 +114,7 @@ class PutioMounter(Operations):
              )
         if file.content_type == 'application/x-directory':
            return dict(
-                st_mode=S_IFDIR,
+                st_mode=S_IFDIR | 0755,
                 st_size=4096,
                 st_ctime=ctime,
                 st_mtime=ctime,
@@ -125,13 +125,14 @@ class PutioMounter(Operations):
             )
 
         filename, file_extension = os.path.splitext(path)
-        if self.config['use_mp4'] and file.content_type[:6] == 'video/' and file.content_type != 'video/mp4' and file_extension == '.mp4':
+        filename, origin_file_extension = os.path.splitext(file.name)
+        if self.config['use_mp4'] and file.content_type[:6] == 'video/' and origin_file_extension != '.mp4' and file_extension == '.mp4':
             size = file.get_mp4_size()
         else:
             size = file.size
 
         return dict(
-            st_mode=S_IFREG,
+            st_mode=S_IFREG | 0755,
             st_size=size,
             st_ctime=ctime,
             st_mtime=ctime,
