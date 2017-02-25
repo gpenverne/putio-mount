@@ -126,7 +126,7 @@ class PutioMounter(Operations):
 
         filename, file_extension = os.path.splitext(path)
         filename, origin_file_extension = os.path.splitext(file.name)
-        if self.config['use_mp4'] and file.content_type[:6] == 'video/' and origin_file_extension != '.mp4' and file_extension == '.mp4':
+        if self.config['use_mp4'] and origin_file_extension != '.mp4' and file_extension == '.mp4':
             size = file.get_mp4_size()
         else:
             size = file.size
@@ -234,9 +234,6 @@ class PutioMounter(Operations):
                 fileUrl = file.get_stream_link(prefer_mp4=True)
             else:
                 fileUrl = file.get_stream_link(prefer_mp4=False)
-
-            if fileUrl.replace('oauth_token', '') == fileUrl:
-                fileUrl = "%s?oauth_token=%s" % (fileUrl, self.config['token'])
         try:
             downloader = downloaders[path]
         except:
