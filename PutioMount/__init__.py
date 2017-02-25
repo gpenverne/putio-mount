@@ -167,6 +167,8 @@ class PutioMounter(Operations):
                     filename_mp4 = os.path.splitext(filename)[0]+'.mp4'
                     self._add_file(os.path.join(full_path, filename_mp4), file)
                     dirents.append(filename_mp4)
+                elif self.config['use_mp4'] and file.content_type != 'video/mp4' and not file.is_mp4_available:
+                    file.ask_for_mp4()
 
         return dirents
 
