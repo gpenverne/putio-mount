@@ -1,6 +1,7 @@
 from __future__ import with_statement
 
 import os
+import json
 from sys import exit, argv
 import putiopy
 import pwd
@@ -16,17 +17,15 @@ foldersIds = {}
 downloaders = {}
 
 tmp_path = os.path.join(tempfile.gettempdir(), 'putio')
-credentials_path = os.path.join(os.path.expanduser('~'), '.putio-token')
-putio_token = None
-prefer_mp4 = False
+config_file = os.path.join(os.path.expanduser('~'), '.putio-config')
+config = {}
 
 class PutioMounter(Operations):
     def __init__(self):
-        global putio_token
-        global prefer_mp4
+        global config
 
-        self.putio = putiopy.Client(putio_token)
-        self.prefer_mp4 = prefer_mp4
+        self.putio = putiopy.Client(config['token'])
+        self.config = config
 
     def _set_files(self, folder, files):
         for file in files:
@@ -98,6 +97,18 @@ class PutioMounter(Operations):
         except:
             ctime = self.now
 
+        if isinstance(file, self.putio.Subtitle):
+            filepath = file.download('/tmp')
+            return dict(
+                 st_mode=S_IFREG | 0777,
+                 st_size=os.path.getsize(filepath),
+                 st_ctime=ctime,
+                 st_mtime=ctime,
+                 st_atime=0,
+                 st_uid=os.getuid(),
+                 st_gid=os.getuid(),
+                 st_nlink=1
+             )
         if file.content_type == 'application/x-directory':
            return dict(
                 st_mode=040777,
@@ -111,8 +122,8 @@ class PutioMounter(Operations):
             )
 
         size = file.size
-
-        if self.prefer_mp4 and file.content_type[:6] == 'video/' and file.content_type != 'video/mp4':
+        filename, file_extension = os.path.splitext(path)
+        if self.config['use_mp4'] and file.content_type[:6] == 'video/' and file.content_type != 'video/mp4' and file_extension == '.mp4':
             if not file.is_mp4_available:
                 file.ask_for_mp4()
             else:
@@ -142,9 +153,18 @@ class PutioMounter(Operations):
         self._set_files(full_path, files)
         for file in files:
             filename = file.name.encode('utf-8')
-            if self.prefer_mp4 and file.content_type[:6] == 'video/' and file.content_type != 'video/mp4' and file.is_mp4_available:
-                filename = os.path.splitext(filename)[0]+'.mp4'
-                self._add_file(os.path.join(full_path, filename), file)
+            if file.content_type[:6] == 'video/':
+                if self.config['use_subtitles']:
+                    subtitles = file.get_subtitles()
+                    for subtitle in subtitles:
+                        filename_subtitles = subtitle.name
+                        self._add_file(os.path.join(full_path, filename_subtitle), subtitle)
+                        dirents.append(filename_subtitle)
+                if self.config['use_mp4'] and file.content_type != 'video/mp4' and file.is_mp4_available:
+                    filename_mp4 = os.path.splitext(filename)[0]+'.mp4'
+                    self._add_file(os.path.join(full_path, filename_mp4), file)
+                    dirents.append(filename_mp4)
+
             dirents.append(filename)
 
         return dirents
@@ -201,9 +221,20 @@ class PutioMounter(Operations):
             fileUrl = links[path]
         except:
             file = self._get_file(path)
-            fileUrl = file.get_stream_link(prefer_mp4=self.prefer_mp4)
+            if isinstance(file, self.putio.Subtitle):
+                filepath = file.download('/tmp')
+                with open(filepath, 'r') as fp:
+                    fp.seek(offset)
+                    return fp.read(length)
+
+            filename, file_extension = os.path.splitext(path)
+            if self.config['use_mp4'] and file.content_type != 'video/mp4' and file.is_mp4_available and file_extension == '.mp4':
+                fileUrl = file.get_stream_link(prefer_mp4=True)
+            else:
+                fileUrl = file.get_stream_link(prefer_mp4=False)
+
             if fileUrl.replace('oauth_token', '') == fileUrl:
-                fileUrl = "%s?oauth_token=%s" % (fileUrl, putio_token)
+                fileUrl = "%s?oauth_token=%s" % (fileUrl, self.config['token'])
         try:
             downloader = downloaders[path]
         except:
@@ -298,24 +329,30 @@ def main(mount_point):
 
 def mount(new_mount_point):
     global mount_point
-    global putio_token
+    global config
 
     mount_point = new_mount_point
     if not os.path.exists(tmp_path):
         os.makedirs(tmp_path)
 
-    if not os.path.exists(credentials_path):
-        with open(credentials_path, 'w') as f:
-            f.write("YOUR_TOKEN_HERE")
+    if not os.path.exists(config_file):
+        defaultConfig = {
+            "token": "YOUR_TOKEN_HERE",
+            "use_mp4": False,
+            "use_subtitles": False
+        }
 
-    with open(credentials_path, 'r') as f:
-        putio_token = f.read().replace("\n", "").replace("\r", "")
+        with open(config_file, 'w') as f:
+            f.write(json.dumps(defaultConfig))
 
-    if putio_token is None or putio_token == 'YOUR_TOKEN_HERE':
-        print "Please put your token in %s file." % credentials_path
+    with open(config_file, 'r') as f:
+        config = json.loads(f.read())
+
+    if config['token'] is None or config['token'] == 'YOUR_TOKEN_HERE':
+        print "Please put your token in %s file." % config_file
         exit()
 
-    FUSE(PutioMounter(), mount_point, nothreads=False, foreground=False,**{'allow_other': True})
+    FUSE(PutioMounter(), mount_point, nothreads=False, foreground=True,**{'allow_other': True})
     i = inotify.adapters.Inotify()
     i.add_watch(mount_point)
 
@@ -324,13 +361,16 @@ def get_mount_point():
 
     return mount_point
 
-def set_prefer_mp4(preferMp4=True):
-    global prefer_mp4
-    prefer_mp4 = preferMp4
+def set_config(paramKey, paramValue):
+    global config
+    global config_file
+    config['paramKey'] = paramValue
+    with open(config_file, 'w'):
+        f.write(json.dumps(config))
 
-def set_credentials_path(custom_credentials_path):
-    global credentials_path
-    credentials_path = custom_credentials_path
+def set_config_file(custom_credentials_path):
+    global config_file
+    config_file = custom_credentials_path
 
 def set_tmp_path(custom_tmp_path):
     global tmp_path

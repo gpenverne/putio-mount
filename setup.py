@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 
 setup(name='PutioMount',
-      version='1.0',
+      version='1.01',
       description='Mount put.io as a local drive',
       author='Gregoire Penverne',
       keywords='put.io mount fuse',
