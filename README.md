@@ -32,12 +32,16 @@ PutioMount.set_tmp_path('/tmp')
 # Set a custom credentials path
 PutioMount.set_config_file('/path/to/.config_file')
 
-# List mp4 files if available instead of original files
-#
 # Need to install specific package
 # pip install git+https://github.com/gpenverne/putio.py
 # use_mp4 option will add .mp4 files, transcoded by put.io if available
+# EXPERIMENTAL
 PutioMount.set_config('use_mp4', True)
+
+# Need to install specific package
+# pip install git+https://github.com/gpenverne/putio.py
+# cache_expiration sets the max age of parts of a file
+PutioMount.set_config('cache_expiration', True)
 
 # Need to install specific package
 # pip install git+https://github.com/gpenverne/putio.py

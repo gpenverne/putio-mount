@@ -327,9 +327,11 @@ class Downloader:
 
 def clean_old_files() :
     now = time.time()
+    global config
+
     for f in os.listdir(tmp_path):
         f = os.path.join(tmp_path, f)
-        if os.stat(f).st_atime < now - 60 * 60 and os.path.isfile(f):
+        if os.stat(f).st_atime < now - config.cache_expiration and os.path.isfile(f):
             os.remove(f)
 
 def main(mount_point):
@@ -347,7 +349,8 @@ def mount(new_mount_point):
         defaultConfig = {
             "token": "YOUR_TOKEN_HERE",
             "use_mp4": False,
-            "use_subtitles": False
+            "use_subtitles": False,
+            "cache_expiration": 3600
         }
 
         with open(config_file, 'w') as f:
