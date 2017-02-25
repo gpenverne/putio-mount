@@ -124,13 +124,11 @@ class PutioMounter(Operations):
                 st_nlink=1
             )
 
-        size = file.size
         filename, file_extension = os.path.splitext(path)
         if self.config['use_mp4'] and file.content_type[:6] == 'video/' and file.content_type != 'video/mp4' and file_extension == '.mp4':
-            if not file.is_mp4_available:
-                file.ask_for_mp4()
-            else:
-                size = file.get_mp4_size()
+            size = file.get_mp4_size()
+        else:
+            size = file.size
 
         return dict(
             st_mode=S_IFREG,

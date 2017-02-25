@@ -62,4 +62,5 @@ $ apt-get install fuse
 
 ```bash
 $ pip install 'requests[security]'
+$ sudo pip install requests==2.5.3
 ```
