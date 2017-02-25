@@ -150,9 +150,10 @@ class PutioMounter(Operations):
             files = self.putio.File.list();
 
 
-        self._set_files(full_path, files)
         for file in files:
-            filename = file.name.encode('utf-8')
+            filename = file.name
+            dirents.append(filename)
+            self._add_file(os.path.join(full_path, filename), file)
             if file.content_type[:6] == 'video/':
                 if self.config['use_subtitles']:
                     subtitles = file.get_subtitles()
@@ -164,8 +165,6 @@ class PutioMounter(Operations):
                     filename_mp4 = os.path.splitext(filename)[0]+'.mp4'
                     self._add_file(os.path.join(full_path, filename_mp4), file)
                     dirents.append(filename_mp4)
-
-            dirents.append(filename)
 
         return dirents
 
