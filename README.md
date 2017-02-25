@@ -36,10 +36,12 @@ PutioMount.set_config_file('/path/to/.config_file')
 #
 # Need to install specific package
 # pip install git+https://github.com/gpenverne/putio.py
+# use_mp4 option will add .mp4 files, transcoded by put.io if available
 PutioMount.set_config('use_mp4', True)
 
 # Need to install specific package
 # pip install git+https://github.com/gpenverne/putio.py
+# use_subtitles option will add subtitles files from put.io if available
 PutioMount.set_config('use_subtitles', True)
 
 # Mount to specific path
