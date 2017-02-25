@@ -229,8 +229,8 @@ class PutioMounter(Operations):
                     return fp.read(length)
 
             filename, file_extension = os.path.splitext(path)
-            filename, original_file_extension = os.path.splitext(path)
-            if self.config['use_mp4'] and original_file_extension != '.mp4' and file.is_mp4_available and file_extension == '.mp4':
+            filename, original_file_extension = os.path.splitext(file.name)
+            if self.config['use_mp4'] and original_file_extension != '.mp4' and file_extension == '.mp4':
                 fileUrl = file.get_stream_link(prefer_mp4=True)
             else:
                 fileUrl = file.get_stream_link(prefer_mp4=False)
