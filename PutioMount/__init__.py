@@ -114,7 +114,7 @@ class PutioMounter(Operations):
              )
         if file.content_type == 'application/x-directory':
            return dict(
-                st_mode=040777,
+                st_mode=S_IFDIR,
                 st_size=4096,
                 st_ctime=ctime,
                 st_mtime=ctime,
