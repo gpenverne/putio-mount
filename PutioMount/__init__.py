@@ -241,7 +241,7 @@ class PutioMounter(Operations):
             downloader = Downloader(fileUrl, file.size, file.id)
             downloaders[path] = downloader
 
-        return downloader.read(offset, length, fileUrl)
+        return downloader.read(offset, length, fileUrl, path)
 
 class Downloader:
     packetSize = 1024 * 2048
@@ -271,13 +271,14 @@ class Downloader:
 
         return packet
 
-    def _get_packet(self, offset, length, url):
+    def _get_packet(self, offset, length, url, path):
         for packet in self.packets:
             if packet.start <= offset and packet.end >= offset + length:
                 return packet
 
         packet = type('lamdbaobject', (object,), {})()
         packet.start = 0
+        packet.path = path
         packet.end = self.packetSize
         packet.id = 1
 
@@ -289,7 +290,8 @@ class Downloader:
         if packet.end > self.size:
             packet.end = self.size
 
-        packet.file = os.path.join(tmp_path, '%s-%s' % (str(self.fileId), str(packet.start)))
+        filename, file_extension = os.path.splitext(path)
+        packet.file = os.path.join(tmp_path, '%s-%s-%s' % (str(self.fileId), str(packet.start), str(file_extension)))
         if not os.path.exists(packet.file):
             clean_old_files()
             thr = threading.Thread(target=self._create_packet, args=(), kwargs={"packet": packet, "url": url})
@@ -297,11 +299,11 @@ class Downloader:
 
         return packet
 
-    def read(self, offset, length, url):
+    def read(self, offset, length, url, path):
         if offset + length > self.size:
             length = self.size - offset
 
-        packet = self._get_packet(offset, length, url)
+        packet = self._get_packet(offset, length, url, path)
 
         if not os.path.exists(packet.file) or os.path.getsize(packet.file) < offset - packet.start + length or packet.end < offset + length or offset - packet.start < 0:
             headers = {"Range": 'bytes=%s-%s' % (str(offset), str(offset + length - 1))}
@@ -313,7 +315,7 @@ class Downloader:
         fp.close()
 
         if packet.end < self.size and os.path.getsize(packet.file) >= self.packetSize:
-            nextPacket = self._get_packet(packet.end + 1, 2, url)
+            nextPacket = self._get_packet(packet.end + 1, 2, url, path)
 
         return data
 
