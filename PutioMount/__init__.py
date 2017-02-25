@@ -157,7 +157,7 @@ class PutioMounter(Operations):
                 if self.config['use_subtitles']:
                     subtitles = file.get_subtitles()
                     for subtitle in subtitles:
-                        filename_subtitles = subtitle.name
+                        filename_subtitle = subtitle.name
                         self._add_file(os.path.join(full_path, filename_subtitle), subtitle)
                         dirents.append(filename_subtitle)
                 if self.config['use_mp4'] and file.content_type != 'video/mp4' and file.is_mp4_available:
@@ -352,7 +352,7 @@ def mount(new_mount_point):
         print "Please put your token in %s file." % config_file
         exit()
 
-    FUSE(PutioMounter(), mount_point, nothreads=False, foreground=True,**{'allow_other': True})
+    FUSE(PutioMounter(), mount_point, nothreads=False, foreground=False,**{'allow_other': True})
     i = inotify.adapters.Inotify()
     i.add_watch(mount_point)
 
