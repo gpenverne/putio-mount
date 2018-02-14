@@ -26,6 +26,9 @@ And use it:
 ```python
 import PutioMount
 
+# Set your token
+PutioMount.set_config("token", "YOUR_TOKEN_HERE")
+
 # Set a custom temporary path
 PutioMount.set_tmp_path('/tmp')
 
@@ -68,3 +71,8 @@ $ apt-get install fuse
 $ pip install 'requests[security]'
 $ sudo pip install requests==2.5.3
 ```
+
+To debug, edit putioMount/__ini__.py to change:
+`FUSE(PutioMounter(), mount_point, nothreads=False, foreground=True,**{'allow_other': True})`
+with
+`FUSE(PutioMounter(), mount_point, nothreads=False, foreground=False,**{'allow_other': True})`

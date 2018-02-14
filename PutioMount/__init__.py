@@ -358,10 +358,12 @@ def mount(new_mount_point):
 
     with open(config_file, 'r') as f:
         config = json.loads(f.read())
-
-    if config['token'] is None or config['token'] == 'YOUR_TOKEN_HERE':
-        print "Please put your token in %s file." % config_file
-        exit()
+    try:
+        if config['token'] is None or config['token'] == 'YOUR_TOKEN_HERE':
+            print "Please put your token in %s file." % config_file
+            exit()
+    except ValueError:
+        set_config("token", "YOUR_TOKEN_HERE")
 
     FUSE(PutioMounter(), mount_point, nothreads=False, foreground=False,**{'allow_other': True})
     i = inotify.adapters.Inotify()
@@ -375,9 +377,9 @@ def get_mount_point():
 def set_config(paramKey, paramValue):
     global config
     global config_file
-    config['paramKey'] = paramValue
-    with open(config_file, 'w'):
-        f.write(json.dumps(config))
+    config[paramKey] = paramValue
+    f = open(config_file, 'w')
+    f.write(json.dumps(config))
 
 def set_config_file(custom_credentials_path):
     global config_file
