@@ -72,7 +72,7 @@ $ pip install 'requests[security]'
 $ sudo pip install requests==2.5.3
 ```
 
-To debug, edit putioMount/__ini__.py to change:
+To debug, edit PutioMount/__ini__.py to change:
 `FUSE(PutioMounter(), mount_point, nothreads=False, foreground=True,**{'allow_other': True})`
 with
 `FUSE(PutioMounter(), mount_point, nothreads=False, foreground=False,**{'allow_other': True})`
