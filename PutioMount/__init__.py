@@ -331,7 +331,7 @@ def clean_old_files() :
 
     for f in os.listdir(tmp_path):
         f = os.path.join(tmp_path, f)
-        if os.stat(f).st_atime < now - config.cache_expiration and os.path.isfile(f):
+        if os.stat(f).st_atime < now - config["cache_expiration"] and os.path.isfile(f):
             os.remove(f)
 
 def main(mount_point):
